@@ -18,7 +18,7 @@ func TestResponseOKSingle(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		CreateResponse(w, ResponseOK, inputData)
+		CreateResponse(w, ResponseOK, inputData, "")
 	})
 	handler.ServeHTTP(rr, req)
 
@@ -43,7 +43,7 @@ func TestResponseOKMultiple(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		CreateResponse(w, ResponseOK, inputData)
+		CreateResponse(w, ResponseOK, inputData, "")
 	})
 	handler.ServeHTTP(rr, req)
 
@@ -68,7 +68,7 @@ func TestResponseError(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		CreateResponse(w, ResponseError, inputData)
+		CreateResponse(w, ResponseError, inputData, "")
 	})
 	handler.ServeHTTP(rr, req)
 
@@ -78,6 +78,32 @@ func TestResponseError(t *testing.T) {
 	}
 
 	expected := fmt.Sprintf(`{"status":"%s","message":"%s","data":["%s"]}`, responseStatus[ResponseError], responseMessage[ResponseError], strings.Join(inputData, `","`))
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
+	}
+}
+
+func TestCustomMessage(t *testing.T) {
+	inputData := []string{"Random data 1", "Random data 2"}
+	customErrorMessage := "Custom error message"
+
+	req, err := http.NewRequest("GET", "/test", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		CreateResponse(w, ResponseError, inputData, customErrorMessage)
+	})
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	expected := fmt.Sprintf(`{"status":"%s","message":"%s","data":["%s"]}`, responseStatus[ResponseError], customErrorMessage, strings.Join(inputData, `","`))
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
 	}

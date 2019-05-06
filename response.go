@@ -33,11 +33,16 @@ type Response struct {
 }
 
 // CreateResponse entity
-func CreateResponse(w http.ResponseWriter, status Status, dato interface{}) error {
+func CreateResponse(w http.ResponseWriter, status Status, data interface{}, customMessage string) error {
+	rm := customMessage
+	if rm == "" {
+		rm = responseMessage[status]
+	}
+
 	r := Response{
 		Status:  responseStatus[status],
-		Message: responseMessage[status],
-		Data:    dato,
+		Message: rm,
+		Data:    data,
 	}
 
 	d, err := json.Marshal(r)
@@ -46,6 +51,9 @@ func CreateResponse(w http.ResponseWriter, status Status, dato interface{}) erro
 		return err
 	}
 
-	w.Write(d)
+	if _, err := w.Write(d); err != nil {
+		return err
+	}
+
 	return nil
 }
